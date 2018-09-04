@@ -52,7 +52,7 @@ pluginBundle {
     (plugins) {
         "goPlugin" {
             id = "$group.gogradle"
-            displayName = "A Go Gradle plugin to support Go project build process"
+            displayName = "Golang plugin, focus on development lifecyle including build, test, dependency management and popular frameworks (gRPC, Gin, Swagger, ...) supported"
         }
     }
 }
