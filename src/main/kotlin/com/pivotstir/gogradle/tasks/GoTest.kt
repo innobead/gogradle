@@ -77,8 +77,6 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
 
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
-
-                println(spec.environment)
                 spec.standardOutput = coverageJsonReportFile.outputStream()
             }
         }

@@ -67,6 +67,7 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
 
                 // go build [-o output] [-i] [build flags] [packages]
                 exec(it) { spec ->
+                    spec.environment.putAll(this.goEnvs(spec.environment))
                     spec.environment.putAll(config.envs)
 
                     if (osArchTokens.size == 2) {
