@@ -39,7 +39,8 @@ gradlePlugin {
     plugins {
         create("goPlugin") {
             id = "$group.gogradle"
-            displayName = "A Golang plugin for building, testing, dependency management and popular frameworks (gRPC, Gin, Swagger, ...) supported"
+            displayName = "gogradle, Golang plugin"
+            description = "A Golang plugin for building, testing, dependency management and popular frameworks (gRPC, Gin, Swagger, ...) supported"
             implementationClass = "com.pivotstir.gogradle.GoPlugin"
         }
     }
