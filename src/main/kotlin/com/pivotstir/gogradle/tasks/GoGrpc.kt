@@ -40,9 +40,9 @@ class GoGrpc : AbstractGoTask<GoGrpcConfig>(GoGrpcConfig::class) {
 
                     if (pkgName !in pkgFilePaths) {
                         pkgFilePaths[pkgName] = mutableListOf()
-                    } else {
-                        pkgFilePaths[pkgName]!!.add(it.canonicalPath)
                     }
+
+                    pkgFilePaths[pkgName]!!.add(it.path)
                 }
             }
         }
@@ -54,11 +54,14 @@ class GoGrpc : AbstractGoTask<GoGrpcConfig>(GoGrpcConfig::class) {
         pkgFilePaths.forEach { _, filePaths ->
             val cmd = """$protocFile
                 -I${config.protoDir}
-                |-I$gopathDir/src
-                |-I$gopathDir/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
-                --go_out=plugins=grpc:$generatedDir ${filePaths.joinToString(" ")}
+                -I$gopathDir/src
+                -I$gopathDir/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+                --go_out=plugins=grpc:$generatedDir
                 --grpc-gateway_out=logtostderr=true:$generatedDir
-                --swagger_out=logtostderr=true:$generatedDir""".trimIndent()
+                --swagger_out=logtostderr=true:$generatedDir
+                ${filePaths.joinToString(" ")}""".trimIndent()
+
+            logger.lifecycle("Generating gRPC stub files. Cmd: $cmd")
 
             exec(cmd.tokens()) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))

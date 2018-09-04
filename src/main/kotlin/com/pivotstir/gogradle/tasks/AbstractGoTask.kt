@@ -20,30 +20,24 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 
-abstract class AbstractGoTask<T : Any>(private val configClass: KClass<T>) : DefaultTask() {
+
+abstract class AbstractGoTask<A : Any>(private val configClass: KClass<A>) : DefaultTask() {
 
     val pluginExtension: GoPluginExtension by lazy {
         project.extensions.findByType(GoPluginExtension::class.java)!!
     }
 
-    val config: T by lazy {
+    val config: A by lazy {
         for (p in pluginExtension::class.declaredMemberProperties) {
             if (p.returnType.classifier == configClass) {
                 @Suppress("UNCHECKED_CAST")
-                p as KProperty1<GoPluginExtension, T>
+                p as KProperty1<GoPluginExtension, A>
 
                 return@lazy p.get(pluginExtension)
             }
         }
 
         throw TaskInstantiationException("$configClass config class not found!")
-    }
-
-    fun exec(args: List<String>, callback: ((ExecSpec) -> Unit)? = null) = project.exec {
-        it.environment = System.getenv().toMap()
-        it.commandLine(*args.toTypedArray())
-
-        callback?.invoke(it)
     }
 
     fun downloadArtifact(artifactName: String, url: URL, destDir: File, archiver: Archiver): Pair<File, File> {
@@ -115,4 +109,13 @@ abstract class AbstractGoTask<T : Any>(private val configClass: KClass<T>) : Def
     inline fun <reified T : Task> task(): T? = project.tasks.findByName(taskName(T::class)) as? T
 
     open fun goEnvs(envs: Map<String, Any>): Map<String, Any> = task<GoEnv>()?.goEnvs(envs) ?: envs
+}
+
+typealias ExecSpecCallback = (ExecSpec) -> Unit
+
+fun DefaultTask.exec(args: List<String>, callback: ExecSpecCallback? = null) = project.exec {
+    it.environment = System.getenv().toMap()
+    it.commandLine(*args.toTypedArray())
+
+    callback?.invoke(it)
 }

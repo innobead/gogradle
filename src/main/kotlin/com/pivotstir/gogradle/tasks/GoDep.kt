@@ -14,7 +14,7 @@ import java.io.File
 class GoDepConfig(
         val project: Project,
         @Input @Optional var cmdArgs: List<String> = emptyList(),
-        @Input @Optional var envs: Map<String, String> = emptyMap(),
+        @Input @Optional var envs: Map<String, Any> = emptyMap(),
         val minProtoVersion: String = "3.6.1",
         @Input @Optional var protoVersion: String = minProtoVersion
 )
@@ -109,13 +109,13 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 logger.lifecycle("Starting to install $it to \$GOPATH/bin")
             }
 
-            val cmd = "go get -u ${cmds.joinToString(" ")}"
+            ("go get -u".tokens() + cmds).let {
+                logger.lifecycle("Installing Go module dependencies. Cmd: ${it.joinToString(" ")}")
 
-            logger.lifecycle("Installing Go package dependencies:\n$cmd")
-
-            exec(cmd.tokens()) { spec ->
-                spec.environment.putAll(goEnvs(spec.environment))
-                spec.environment["GO111MODULE"] = "off"
+                exec(it) { spec ->
+                    spec.environment.putAll(goEnvs(spec.environment))
+                    spec.environment["GO111MODULE"] = "off"
+                }
             }
         } catch (e: Throwable) {
             e
@@ -160,13 +160,15 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 logger.lifecycle("Starting to update ${it.path}")
             }
 
-            val cmd = "go get -d ${config.cmdArgs} ${pkgs.map { it.path }.joinToString(" ") { it }}"
+            ("go get -d".tokens() + config.cmdArgs + pkgs.map { it.path }).let {
+                logger.lifecycle("Updating Go package dependencie. Cmd: ${it.joinToString(" ")}")
 
-            logger.lifecycle("Updating Go package dependencies:\n$cmd")
+                exec(it) { spec ->
+                    spec.environment.putAll(goEnvs(spec.environment))
+                    spec.environment["GO111MODULE"] = "on"
 
-            exec(cmd.tokens()) { spec ->
-                spec.environment.putAll(goEnvs(spec.environment))
-                spec.environment["GO111MODULE"] = "on"
+                    spec.environment.putAll(config.envs)
+                }
             }
         } catch (e: Throwable) {
             e

@@ -7,13 +7,15 @@ import com.pivotstir.gogradle.tokens
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 class GoTestConfig(
         val project: Project,
+        val packages: List<String> = listOf("./..."),
         @Input @Optional var cmdArgs: List<String> = emptyList(),
-        @Input @Optional var envs: Map<String, String> = emptyMap(),
-        @Input @Optional var packages: List<String> = listOf("./...")
+        @Input @Optional var envs: Map<String, Any> = emptyMap(),
+        @Input @Optional var ignoredDirs: List<String> = emptyList()
 )
 
 @GradleSupport
@@ -44,7 +46,23 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
     override fun run() {
         super.run()
 
-        ("go test -coverprofile $coverageReportFile".tokens() + config.cmdArgs + config.packages).let {
+        val pkgs = mutableListOf<String>()
+        val ignoredPkgs = config.ignoredDirs.map { "${pluginExtension.pluginConfig.modulePath}/$it" }
+
+        ("go list".tokens() + config.packages).let {
+            val out = ByteArrayOutputStream()
+
+            exec(it) { spec ->
+                spec.environment.putAll(this.goEnvs(spec.environment))
+                spec.standardOutput = out
+            }
+
+            pkgs += out.toString().lines().filterNot {
+                it in ignoredPkgs
+            }
+        }
+
+        ("go test -coverprofile $coverageReportFile".tokens() + config.cmdArgs + pkgs).let {
             logger.lifecycle("Testing Go packages. Cmd: ${it.joinToString(" ")}")
 
             // go test [build/test flags] [packages] [build/test flags & test binary flags]

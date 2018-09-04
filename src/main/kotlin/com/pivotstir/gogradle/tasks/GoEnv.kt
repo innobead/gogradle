@@ -107,7 +107,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
             if (!it) {
                 logger.lifecycle("Go found locally, but not matched version (${config.version})\n'${out.toString().trim()}'")
             } else {
-                logger.lifecycle("Go found locally (${config.version})\n$out")
+                logger.lifecycle("Go found locally (${config.version})\n${out.toString().trim()}")
             }
         }
     }

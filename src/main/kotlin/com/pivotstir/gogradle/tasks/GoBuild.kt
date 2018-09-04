@@ -7,11 +7,13 @@ import com.pivotstir.gogradle.tokens
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
+import java.io.File
 
 class GoBuildConfig(
         val project: Project,
         @Input @Optional var cmdArgs: List<String> = emptyList(),
-        @Input @Optional var envs: Map<String, String> = emptyMap(),
+        @Input @Optional var envs: Map<String, Any> = emptyMap(), // CGO_ENABLED=0
+        @Input @Optional var osArches: List<String> = emptyList(),
         @Input @Optional var packages: List<String> = listOf("./...")
 )
 
@@ -31,13 +33,48 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
     override fun run() {
         super.run()
 
-        val cmds = "go build".tokens() + config.cmdArgs + config.packages
+        val osArches = config.osArches.toMutableSet()
+        if (osArches.isEmpty()) {
+            osArches.add("")
+        }
 
-        logger.lifecycle("Building Go packages\n ${cmds.joinToString(" ")}")
+        loop@ for (osArch in osArches) {
+            val osArchTokens = osArch.split("/")
 
-        // go build [-o output] [-i] [build flags] [packages]
-        exec(cmds) {
-            it.environment.putAll(config.envs)
+            val outputDir = when {
+                osArchTokens.size == 2 -> {
+                    File(pluginExtension.pluginConfig.dir, osArch).apply { mkdirs() }
+                }
+
+                osArch.isEmpty() -> {
+                    pluginExtension.pluginConfig.dir
+                }
+
+                else -> {
+                    logger.error("Invalid GOOS/GOARCH: $osArch")
+                    continue@loop
+                }
+            }
+
+            var outputPath = listOf(outputDir, pluginExtension.pluginConfig.modulePath).joinToString(File.separator)
+
+            if (osArchTokens.isNotEmpty() && osArchTokens[0] == "windows") {
+                outputPath += ".exe"
+            }
+
+            ("go build -o $outputPath".tokens() + config.cmdArgs).let {
+                logger.lifecycle("Building Go packages for $osArch. Cmd: ${it.joinToString(" ")}")
+
+                // go build [-o output] [-i] [build flags] [packages]
+                exec(it) { spec ->
+                    spec.environment.putAll(config.envs)
+
+                    if (osArchTokens.size == 2) {
+                        spec.environment["GOOS"] = osArchTokens[0]
+                        spec.environment["GOARCH"] = osArchTokens[1]
+                    }
+                }
+            }
         }
     }
 
