@@ -5,7 +5,6 @@ import kotlinx.coroutines.experimental.*
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.process.internal.ExecException
 import org.rauschig.jarchivelib.ArchiveFormat
 import org.rauschig.jarchivelib.ArchiverFactory
@@ -65,7 +64,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
         return@async try {
             if (protocFile.exists()) {
                 val out = ByteArrayOutputStream()
-                val process = exec("$protocFile --version".tokens()) {
+                val process = exec("$protocFile --version") {
                     it.standardOutput = out
                 }
 
@@ -77,13 +76,10 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
 
             var (platform, arch) = getOsArch()
 
-            arch = when(arch) {
+            arch = when (arch) {
                 "amd64" -> "x86_64"
                 "i386" -> "x86_32"
-                else -> throw TaskExecutionException(
-                        this@GoDep,
-                        RuntimeException("Unsupported platform ($platform) or arch ($arch) of protobuf")
-                )
+                else -> arch
             }
 
             if (platform == "darwin") {
@@ -119,8 +115,8 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 logger.lifecycle("Starting to install $it to \$GOPATH/bin")
             }
 
-            ("go get -u".tokens() + cmds).let {
-                logger.lifecycle("Installing Go module dependencies. Cmd: ${it.joinToString(" ")}")
+            ("go get -u".tokens() + cmds).joinToString(" ").let {
+                logger.lifecycle("Installing Go module dependencies. Cmd: $it")
 
                 exec(it) { spec ->
                     spec.environment.putAll(goEnvs(spec.environment))
@@ -170,8 +166,8 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 logger.lifecycle("Starting to update ${it.path}")
             }
 
-            ("go get -d".tokens() + config.cmdArgs + pkgs.map { it.path }).let {
-                logger.lifecycle("Updating Go package dependencie. Cmd: ${it.joinToString(" ")}")
+            ("go get -d".tokens() + config.cmdArgs + pkgs.map { it.path }).joinToString(" ").let {
+                logger.lifecycle("Updating Go package dependencie. Cmd: $it")
 
                 exec(it) { spec ->
                     spec.environment.putAll(goEnvs(spec.environment))

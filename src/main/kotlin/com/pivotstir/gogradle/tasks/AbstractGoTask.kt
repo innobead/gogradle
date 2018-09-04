@@ -119,3 +119,10 @@ fun DefaultTask.exec(args: List<String>, callback: ExecSpecCallback? = null) = p
 
     callback?.invoke(it)
 }
+
+fun DefaultTask.exec(cmd: String, callback: ExecSpecCallback? = null) = project.exec {
+    it.environment = System.getenv().toMap()
+    it.commandLine("bash", "-c", cmd)
+
+    callback?.invoke(it)
+}

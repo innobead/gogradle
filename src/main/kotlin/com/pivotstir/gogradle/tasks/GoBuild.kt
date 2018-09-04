@@ -38,32 +38,24 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
             osArches.add("")
         }
 
-        loop@ for (osArch in osArches) {
+        for (osArch in osArches) {
             val osArchTokens = osArch.split("/")
 
-            val outputDir = when {
-                osArchTokens.size == 2 -> {
-                    File(pluginExtension.pluginConfig.dir, osArch).apply { mkdirs() }
-                }
+            var outputPath = listOf(
+                    pluginExtension.pluginConfig.dir.canonicalPath,
+                    pluginExtension.pluginConfig.modulePath
+            ).joinToString(File.separator)
 
-                osArch.isEmpty() -> {
-                    pluginExtension.pluginConfig.dir
-                }
+            if (osArchTokens.isNotEmpty()) {
+                outputPath += osArchTokens.joinToString("-")
 
-                else -> {
-                    logger.error("Invalid GOOS/GOARCH: $osArch")
-                    continue@loop
+                if (osArchTokens[0] == "windows") {
+                    outputPath += ".exe"
                 }
             }
 
-            var outputPath = listOf(outputDir, pluginExtension.pluginConfig.modulePath).joinToString(File.separator)
-
-            if (osArchTokens.isNotEmpty() && osArchTokens[0] == "windows") {
-                outputPath += ".exe"
-            }
-
-            ("go build -o $outputPath".tokens() + config.cmdArgs).let {
-                logger.lifecycle("Building Go packages for $osArch. Cmd: ${it.joinToString(" ")}")
+            ("go build -o $outputPath".tokens() + config.cmdArgs).joinToString(" ").let {
+                logger.lifecycle("Building Go packages for $osArch. Cmd: $it")
 
                 // go build [-o output] [-i] [build flags] [packages]
                 exec(it) { spec ->

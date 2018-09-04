@@ -3,7 +3,6 @@ package com.pivotstir.gogradle.tasks
 import com.pivotstir.gogradle.GoPlugin
 import com.pivotstir.gogradle.GradleSupport
 import com.pivotstir.gogradle.taskName
-import com.pivotstir.gogradle.tokens
 import org.gradle.api.Project
 
 class GoSwagConfig(
@@ -23,7 +22,7 @@ class GoSwag : AbstractGoTask<GoSwagConfig>(GoSwagConfig::class) {
     override fun run() {
         super.run()
 
-        exec("swag init".tokens()) {
+        exec("swag init") {
             it.environment.putAll(this.goEnvs(it.environment))
         }
     }

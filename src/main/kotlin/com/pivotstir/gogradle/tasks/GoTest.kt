@@ -49,7 +49,7 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
         val pkgs = mutableListOf<String>()
         val ignoredPkgs = config.ignoredDirs.map { "${pluginExtension.pluginConfig.modulePath}/$it" }
 
-        ("go list".tokens() + config.packages).let {
+        ("go list".tokens() + config.packages).joinToString(" ").let {
             val out = ByteArrayOutputStream()
 
             exec(it) { spec ->
@@ -62,8 +62,8 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
             }
         }
 
-        ("go test -coverprofile $coverageReportFile".tokens() + config.cmdArgs + pkgs).let {
-            logger.lifecycle("Testing Go packages. Cmd: ${it.joinToString(" ")}")
+        ("go test -coverprofile $coverageReportFile".tokens() + config.cmdArgs + pkgs).joinToString(" ").let {
+            logger.lifecycle("Testing Go packages. Cmd: $it")
 
             // go test [build/test flags] [packages] [build/test flags & test binary flags]
             exec(it) { spec ->
@@ -72,8 +72,8 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
             }
         }
 
-        "gocov convert $coverageReportFile".tokens().let {
-            logger.lifecycle("Converting coverage report ($coverageReportFile) to json report ($coverageJsonReportFile). Cmd: ${it.joinToString(" ")}")
+        "gocov convert $coverageReportFile".tokens().joinToString(" ").let {
+            logger.lifecycle("Converting coverage report ($coverageReportFile) to json report ($coverageJsonReportFile). Cmd: $it")
 
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
@@ -81,8 +81,8 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
             }
         }
 
-        "gocov-xml $coverageJsonReportFile $coverageXmlReportFile".tokens().let {
-            logger.lifecycle("Converting coverage Json report ($coverageJsonReportFile) to Cobertura XML report ($coverageXmlReportFile). Cmd: ${it.joinToString(" ")}")
+        "gocov-xml $coverageJsonReportFile $coverageXmlReportFile".tokens().joinToString(" ").let {
+            logger.lifecycle("Converting coverage Json report ($coverageJsonReportFile) to Cobertura XML report ($coverageXmlReportFile). Cmd: $it")
 
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))

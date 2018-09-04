@@ -1,7 +1,6 @@
 package com.pivotstir.gogradle.tasks
 
 import com.pivotstir.gogradle.GradleSupport
-import com.pivotstir.gogradle.tokens
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import java.io.File
@@ -23,7 +22,7 @@ class Go : DefaultTask() {
         cmds.forEach { cmd, envs ->
             logger.lifecycle("Running Cmd: $cmd")
 
-            exec(cmd.tokens()) {
+            exec(cmd) {
                 it.environment.putAll(envs)
 
                 if (stdoutFile != null) {

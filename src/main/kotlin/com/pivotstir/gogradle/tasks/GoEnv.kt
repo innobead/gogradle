@@ -3,7 +3,6 @@ package com.pivotstir.gogradle.tasks
 import com.pivotstir.gogradle.GoPlugin
 import com.pivotstir.gogradle.GradleSupport
 import com.pivotstir.gogradle.toURL
-import com.pivotstir.gogradle.tokens
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -62,12 +61,14 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
         if (goDir.exists()) {
             if ("PATH" in newEnvs) {
                 newEnvs["PATH"] = listOf(
-                        goExec().canonicalPath,
+                        goExec().parentFile.canonicalPath,
                         File(goPathDir, "bin").canonicalPath,
                         newEnvs["PATH"]
                 ).joinToString(File.pathSeparator)
             }
         }
+
+        logger.debug("Environment: $newEnvs")
 
         return newEnvs
     }
@@ -104,7 +105,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
             else -> return false
         }
 
-        val process = this.exec(cmd.tokens()) {
+        val process = this.exec(cmd) {
             it.environment.putAll(goEnvs(it.environment))
             it.standardOutput = out
         }
@@ -118,7 +119,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
                 if (!config.useSandbox && cmd == "go version") {
                     out.reset()
 
-                    exec("go env GOROOT".tokens()) {
+                    exec("go env GOROOT") {
                         it.environment.putAll(goEnvs(it.environment))
                         it.standardOutput = out
                     }
@@ -130,7 +131,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
     }
 
     private fun goExec(): File = if (!config.useSandbox && goLocalDir != null) {
-        goExec
+        File(goLocalDir, listOf("bin", "go").joinToString(File.separator))
     } else {
         this.goExec
     }
