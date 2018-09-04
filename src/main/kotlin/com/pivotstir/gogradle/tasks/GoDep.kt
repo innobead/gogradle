@@ -166,7 +166,6 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 exec(it) { spec ->
                     spec.environment.putAll(goEnvs(spec.environment))
                     spec.environment["GO111MODULE"] = "on"
-
                     spec.environment.putAll(config.envs)
                 }
             }

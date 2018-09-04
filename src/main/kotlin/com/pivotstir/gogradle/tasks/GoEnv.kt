@@ -32,6 +32,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
     }
 
     val goDir: File = File(pluginExtension.pluginConfig.envDir, "go")
+    var goLocalDir: File? = null
     val goExec: File = File(goDir, listOf("bin", "go").joinToString(File.separator))
     val goPathDir: File = File(goDir, "gopath").also { it.mkdirs() }
 
@@ -50,13 +51,18 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
     override fun goEnvs(envs: Map<String, Any>): Map<String, Any> {
         val newEnvs = envs.toMutableMap()
 
-        newEnvs["GOROOT"] = goDir.canonicalPath
+        newEnvs["GOROOT"] = if (config.useSandbox) {
+            goDir.canonicalPath
+        } else {
+            goLocalDir?.canonicalPath ?: ""
+        }
+
         newEnvs["GOPATH"] = goPathDir.canonicalPath
 
         if (goDir.exists()) {
             if ("PATH" in newEnvs) {
                 newEnvs["PATH"] = listOf(
-                        goExec.canonicalPath,
+                        goExec().canonicalPath,
                         File(goPathDir, "bin").canonicalPath,
                         newEnvs["PATH"]
                 ).joinToString(File.pathSeparator)
@@ -108,7 +114,24 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
                 logger.lifecycle("Go found locally, but not matched version (${config.version})\n'${out.toString().trim()}'")
             } else {
                 logger.lifecycle("Go found locally (${config.version})\n${out.toString().trim()}")
+
+                if (!config.useSandbox && cmd == "go version") {
+                    out.reset()
+
+                    exec("go env GOROOT".tokens()) {
+                        it.environment.putAll(goEnvs(it.environment))
+                        it.standardOutput = out
+                    }
+
+                    goLocalDir = File(out.toString().trim())
+                }
             }
         }
+    }
+
+    private fun goExec(): File = if (!config.useSandbox && goLocalDir != null) {
+        goExec
+    } else {
+        this.goExec
     }
 }
