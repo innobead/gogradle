@@ -57,7 +57,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
             if ("PATH" in newEnvs) {
                 newEnvs["PATH"] = listOf(
                         goExec.canonicalPath,
-                        listOf(goPathDir, "bin").joinToString(File.separator),
+                        File(goPathDir, "bin").canonicalPath,
                         newEnvs["PATH"]
                 ).joinToString(File.pathSeparator)
             }

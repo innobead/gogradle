@@ -73,16 +73,18 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
         }
 
         "gocov convert $coverageReportFile".tokens().let {
-            logger.lifecycle("Converting coverage report ($coverageReportFile) to json report ($coverageJsonReportFile)")
+            logger.lifecycle("Converting coverage report ($coverageReportFile) to json report ($coverageJsonReportFile). Cmd: ${it.joinToString(" ")}")
 
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
+
+                println(spec.environment)
                 spec.standardOutput = coverageJsonReportFile.outputStream()
             }
         }
 
         "gocov-xml $coverageJsonReportFile $coverageXmlReportFile".tokens().let {
-            logger.lifecycle("Converting coverage Json report ($coverageJsonReportFile) to Cobertura XML report ($coverageXmlReportFile)")
+            logger.lifecycle("Converting coverage Json report ($coverageJsonReportFile) to Cobertura XML report ($coverageXmlReportFile). Cmd: ${it.joinToString(" ")}")
 
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
