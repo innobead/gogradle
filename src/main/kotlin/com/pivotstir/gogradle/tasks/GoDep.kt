@@ -5,6 +5,7 @@ import kotlinx.coroutines.experimental.*
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.process.internal.ExecException
 import org.rauschig.jarchivelib.ArchiveFormat
 import org.rauschig.jarchivelib.ArchiverFactory
@@ -75,6 +76,15 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
             }
 
             var (platform, arch) = getOsArch()
+
+            arch = when(arch) {
+                "amd64" -> "x86_64"
+                "i386" -> "x86_32"
+                else -> throw TaskExecutionException(
+                        this@GoDep,
+                        RuntimeException("Unsupported platform ($platform) or arch ($arch) of protobuf")
+                )
+            }
 
             if (platform == "darwin") {
                 platform = "osx"
