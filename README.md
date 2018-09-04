@@ -1,3 +1,5 @@
+[![Travis CI](https://travis-ci.org/innobead/gogradle.svg)](https://travis-ci.org/innobead/gogradle)
+
 # gogradle
 A Gradle plugin supports Go module/package build lifecycle, also integrate [go modules](https://github.com/golang/go/wiki/Modules) started from Go 1.11 for dependency management.
 
