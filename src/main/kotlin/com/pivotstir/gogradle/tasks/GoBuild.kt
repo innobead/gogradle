@@ -26,6 +26,7 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
 
         dependsOn(
                 taskName(GoDep::class),
+                taskName(GoGrpc::class),
                 taskName(GoTest::class)
         )
     }
