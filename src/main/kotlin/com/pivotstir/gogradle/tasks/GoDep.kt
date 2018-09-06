@@ -132,14 +132,27 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
         return@async try {
             logger.lifecycle("Generating go.mod")
 
-            val p = Runtime.getRuntime().exec("go mod init ${pluginExtension.pluginConfig.modulePath}").apply { waitFor() }
+            val out = ByteArrayOutputStream()
+
+            val result = "go mod init ${pluginExtension.pluginConfig.modulePath}".let {
+                logger.lifecycle("Generating go.mod. Cmd: $it")
+
+                exec(it) { spec ->
+                    spec.environment.putAll(goEnvs(spec.environment))
+                    spec.environment["GO111MODULE"] = "on"
+                    spec.standardOutput = out
+
+                    spec.isIgnoreExitValue = true
+                }
+            }
+
             when {
-                p.exitValue() == 1 -> {
+                result.exitValue == 1 -> {
                     logger.lifecycle("go.mod already exists")
                 }
 
-                p.exitValue() != 0 -> {
-                    throw ExecException("Error to execute go command: return code = ${p.exitValue()}, ${p.inputStream.bufferedReader().readText()}")
+                result.exitValue != 0 -> {
+                    throw ExecException("Error to execute go command: return code = ${result.exitValue}, $out")
                 }
             }
 
