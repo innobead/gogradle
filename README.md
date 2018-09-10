@@ -93,21 +93,21 @@ go {
 ```
 
 # Go Environment
-`go goenv`, setup Go environment in .gogradle
+`gralde goenv`, setup Go environment in .gogradle
 
 # gRPC Support
-`go godep`, besides resolving package dependencies, setup environments for popular go frameworks (gRPC, gRPC gateway, Gin-Swagger)
+`gralde godep`, besides resolving package dependencies, setup environments for popular go frameworks (gRPC, gRPC gateway, Gin-Swagger)
 
-`go gogrpc`, generate gRPC stubs from protobuf schemas and swagger files for gRPC gateway support
+`gralde gogrpc`, generate gRPC stubs from protobuf schemas and swagger files for gRPC gateway support
 
 # Swagger Support
-`go goswag`, generate swagger files for Gin-Swagger support
+`gralde goswag`, generate swagger files for Gin-Swagger support
 
 # Dependencies Management
-`go godep`, resolve packages build/test dependencies in gogradle DSL, then create/update go.mod and download all dependent packages.
+`gralde godep`, resolve packages build/test dependencies in gogradle DSL, then create/update go.mod and download all dependent packages.
 
 # Test
-`go test`, run testing, also support ignored folders and different coverage reports (json, xml). XML is Cobertura compatible.
+`gralde gotest`, run testing, also support ignored folders and different coverage reports (json, xml). XML is Cobertura compatible.
 
 # Custom Go Task
 ```
