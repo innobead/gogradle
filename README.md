@@ -30,6 +30,8 @@ goTest - Test Go project
 # Configurations
 ```
 go {
+    // Change module path from default project name
+    pluginConfig.modulePath = ""
 
     build {
         // extra options/flags of `go build`
@@ -68,6 +70,9 @@ go {
     grpc {
         // Protobuf schemas root folder. Default: file("proto")
         protoDir = file("proto")
+        
+        // Append the module path as prefix path of below packages when referenced in other protobuf gnerated stub go files
+        referencePackages = []
     }
 
     test {
