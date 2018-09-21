@@ -1,15 +1,15 @@
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 
 plugins {
-    kotlin("jvm") version "1.2.61"
+    kotlin("jvm") version "1.2.70"
     `java-gradle-plugin`
     id("com.gradle.plugin-publish") version "0.10.0"
-    id("org.jetbrains.kotlin.plugin.allopen") version "1.2.61"
+    id("org.jetbrains.kotlin.plugin.allopen") version "1.2.70"
     maven
 }
 
 group = "com.pivotstir"
-version = "1.0.11"
+version = "1.0.12"
 
 repositories {
     jcenter()

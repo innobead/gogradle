@@ -11,7 +11,8 @@ import java.io.File
 
 class GoGrpcConfig(
         val project: Project,
-        @Input @Optional var protoDir: File = File("proto")
+        @Input @Optional var protoDir: File = File("proto"),
+        @Input @Optional var referencePackages: List<String> = emptyList()
 )
 
 @GradleSupport
@@ -47,6 +48,8 @@ class GoGrpc : AbstractGoTask<GoGrpcConfig>(GoGrpcConfig::class) {
             }
         }
 
+        logger.lifecycle("Generating go gRPC protobuf stub files")
+
         val protocFile = (project.tasks.findByName(taskName(GoDep::class)) as GoDep).protocFile
         val generatedDir = project.projectDir
         val gopathDir = task<GoEnv>()!!.goPathDir
@@ -65,6 +68,36 @@ class GoGrpc : AbstractGoTask<GoGrpcConfig>(GoGrpcConfig::class) {
 
             exec(cmd.tokens()) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
+            }
+        }
+
+        if (config.referencePackages.isNotEmpty()) {
+            logger.lifecycle("Correcting referenced proto go packages used in other proto go packages by adding module path as prefix path")
+
+            val pbGoDirs = mutableListOf<File>()
+
+            pbGoDirs += config.project.projectDir
+
+            pbGoDirs += config.protoDir.listFiles { it ->
+                return@listFiles it.isDirectory
+            }.map {
+                File(project.projectDir, it.name)
+            }
+
+            val pbGoFiles = pbGoDirs.flatMap {
+                it.listFiles { f ->
+                    return@listFiles f.name.endsWith(".pb.go")
+                }.toList()
+            }
+
+            logger.lifecycle("$pbGoFiles")
+
+            config.referencePackages.forEach { pkg ->
+                pbGoFiles.forEach {
+                    logger.lifecycle("Updating $it")
+
+                    it.writeText(it.readText().replace("""$pkg "$pkg"""", """$pkg "${pluginExtension.pluginConfig.modulePath}/$pkg""""))
+                }
             }
         }
     }
