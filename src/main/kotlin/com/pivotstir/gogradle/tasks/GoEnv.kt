@@ -57,6 +57,7 @@ class GoEnv : AbstractGoTask<GoEnvConfig>(GoEnvConfig::class) {
         }
 
         newEnvs["GOPATH"] = goPathDir.canonicalPath
+        newEnvs["GOBIN"] = newEnvs["GOPATH"].toString() + File.separator + "bin"
 
         if (goDir.exists()) {
             if ("PATH" in newEnvs) {

@@ -16,7 +16,8 @@ class GoDepConfig(
         @Input @Optional var cmdArgs: List<String> = emptyList(),
         @Input @Optional var envs: Map<String, Any> = emptyMap(),
         val minProtoVersion: String = "3.6.1",
-        @Input @Optional var protoVersion: String = minProtoVersion
+        @Input @Optional var protoVersion: String = minProtoVersion,
+        @Input @Optional val swaggoVersion: String = "1.3.2"
 )
 
 @GradleSupport
@@ -100,27 +101,59 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
 
     private fun download3rdTools(): Deferred<Any?> = async {
         return@async try {
-            val cmds = listOf(
-                    "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway",
-                    "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger",
-                    "github.com/golang/protobuf/protoc-gen-go",
-                    "google.golang.org/grpc",
-                    "github.com/wadey/gocovmerge",
-                    "github.com/axw/gocov/gocov",
-                    "github.com/AlekSi/gocov-xml",
-                    "github.com/swaggo/swag/cmd/swag"
-            )
+            run {
+                // install by go get
+                val cmds = listOf(
+                        "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway",
+                        "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger",
+                        "github.com/golang/protobuf/protoc-gen-go",
+                        "google.golang.org/grpc",
+                        "github.com/wadey/gocovmerge",
+                        "github.com/axw/gocov/gocov",
+                        "github.com/AlekSi/gocov-xml"
+                )
 
-            cmds.forEach {
-                logger.lifecycle("Starting to install $it to \$GOPATH/bin")
+                cmds.forEach {
+                    logger.lifecycle("Starting to install $it to \$GOPATH/bin or \$GOBIN")
+                }
+
+                ("go get -u".tokens() + cmds).joinToString(" ").let {
+                    logger.lifecycle("Installing Go module dependencies. Cmd: $it")
+
+                    exec(it) { spec ->
+                        spec.environment.putAll(goEnvs(spec.environment))
+                        spec.environment["GO111MODULE"] = "off"
+                    }
+                }
             }
 
-            ("go get -u".tokens() + cmds).joinToString(" ").let {
-                logger.lifecycle("Installing Go module dependencies. Cmd: $it")
+            run {
+                // install specific version of modules (go get can not support to install versioned module under GOPATH)
+                logger.lifecycle("Installing swaggo command (${config.swaggoVersion})")
 
-                exec(it) { spec ->
-                    spec.environment.putAll(goEnvs(spec.environment))
-                    spec.environment["GO111MODULE"] = "off"
+                val gopathDir = task<GoEnv>()!!.goPathDir
+                val swaggoDir = File(gopathDir, "src/github.com/swaggo".split("/").joinToString(File.separator)).apply {
+                    mkdirs()
+                }
+
+                val cmds = listOf(
+                        "git clone -b v${config.swaggoVersion} git@github.com:swaggo/swag.git",
+                        "go get -d github.com/swaggo/swag/cmd/swag",
+                        "go install github.com/swaggo/swag/cmd/swag"
+                )
+
+                cmds.forEachIndexed { index, s ->
+                    exec(s) { spec ->
+                        if (index == 0) {
+                            // ignore git clone if the folder already exists
+                            spec.isIgnoreExitValue = true
+                        }
+
+                        spec.workingDir(swaggoDir)
+
+                        spec.environment.putAll(goEnvs(spec.environment))
+                        spec.environment["GO111MODULE"] = "off"
+                    }
                 }
             }
         } catch (e: Throwable) {

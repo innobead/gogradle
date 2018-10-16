@@ -57,6 +57,9 @@ go {
         
         // Protobuf version for downloading protobuf toolset. Default: "3.6.1"
         protoVersion = "3.6.1"
+        
+        // version of https://github.com/swaggo/swag
+        swaggoVersion = "1.3.2"
     }
     
     env {
