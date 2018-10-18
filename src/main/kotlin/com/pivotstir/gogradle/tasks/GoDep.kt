@@ -137,7 +137,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 }
 
                 val cmds = listOf(
-                        "git clone -b v${config.swaggoVersion} git@github.com:swaggo/swag.git",
+                        "git clone -b v${config.swaggoVersion} https://github.com/swaggo/swag.git",
                         "go get -d github.com/swaggo/swag/cmd/swag",
                         "go install github.com/swaggo/swag/cmd/swag"
                 )
