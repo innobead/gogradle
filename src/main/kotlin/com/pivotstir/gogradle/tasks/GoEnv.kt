@@ -15,7 +15,7 @@ import java.io.File
 class GoEnvConfig(
         val project: Project,
         var useSandbox: Boolean = true,
-        val minVersion: String = "1.11", // need "go module" which starts from 1.11
+        val minVersion: String = "1.11.4", // need "go module" which starts from 1.11
         @Input @Optional var version: String = minVersion
 )
 
