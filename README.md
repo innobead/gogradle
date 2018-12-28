@@ -10,7 +10,7 @@ https://plugins.gradle.org/plugin/com.pivotstir.gogradle
 
 ```
 plugins {
-  id "com.pivotstir.gogradle" version "1.0.15"
+  id "com.pivotstir.gogradle" version "1.0.17"
 }
 ```
 
