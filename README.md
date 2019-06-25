@@ -10,7 +10,7 @@ https://plugins.gradle.org/plugin/com.pivotstir.gogradle
 
 ```
 plugins {
-  id "com.pivotstir.gogradle" version "1.0.17"
+  id "com.pivotstir.gogradle" version "1.1.0"
 }
 ```
 
@@ -28,6 +28,9 @@ goTest - Test Go project
 ```
 
 # Configurations
+
+## build.gradle
+
 ```
 go {
     // Change module path from default project name
@@ -42,9 +45,15 @@ go {
         
         // crossplatform build. Default: if empty or not specified, just build for local platform
         osArches = [
-            'darwin/amd64', 
-            'linux/amd64', 
-            'windows/amd64'
+            "darwin/amd64", 
+            "linux/amd64", 
+            "windows/amd64"
+        ]
+        
+        // package paths to build. 
+        packagePaths = [
+            "./cmd/package1"
+            "./cmd/package2"
         ]
     }
     
@@ -55,16 +64,19 @@ go {
         // extra envirnment variables of `go get` for downloading package dependencies
         envs = ["CGO_ENABLED": 0]
         
+        // ignore third party tools download like Protobuf, Swaggo
+        thirdpartyIgnored = false
+        
         // Protobuf version for downloading protobuf toolset. Default: "3.6.1"
-        protoVersion = "3.6.1"
+        protoVersion = "3.8.0"
         
         // version of https://github.com/swaggo/swag
-        swaggoVersion = "1.3.2"
+        swaggoVersion = "1.5.1"
     }
     
     env {
-        // go version. Default: "1.11"
-        version = '1.11'
+        // go version. Default: "1.12.6"
+        version = "1.12"
         
         // use project level go installation. Default: true
         useSandbox = true
@@ -86,16 +98,35 @@ go {
         envs = ["CGO_ENABLED": 0]
         
         // ignore folders for testing
-        ignoredDirs = ['abc']
+        ignoredDirs = ["abc"]
     }
 
     dependencies {
-        build 'github.com/golang/protobuf@v1.2.0'
-        build 'google.golang.org/grpc@v1.14.0'
-        build 'golang.org/x/text'
-        build 'golang.org/x/net'
+        build "github.com/golang/protobuf@v1.3.1"
+        test "github.com/stretchr/testify@v1.2.2"
+    }
+}
+```
 
-        test 'github.com/stretchr/testify@v1.2.2'
+## build.gradle.kts
+
+```
+extensions.getByType(GoPluginExtension::class).apply {
+    env {
+        useSandbox = true
+    }
+
+    build {
+        packagePaths = listOf("./cmd/package1", "./cmd/package2")
+    }
+
+    dep {
+        thirdpartyIgnored = false
+    }
+
+    dependencies {
+        build("github.com/golang/protobuf@v1.3.1")
+        test("github.com/stretchr/testify@v1.2.2")
     }
 }
 ```

@@ -1,7 +1,7 @@
 package com.pivotstir.gogradle.tasks
 
 import com.pivotstir.gogradle.*
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -15,9 +15,10 @@ class GoDepConfig(
         val project: Project,
         @Input @Optional var cmdArgs: List<String> = emptyList(),
         @Input @Optional var envs: Map<String, Any> = emptyMap(),
-        val minProtoVersion: String = "3.6.1",
+        val minProtoVersion: String = "3.8.0",
+        @Input @Optional var thirdpartyIgnored: Boolean = false,
         @Input @Optional var protoVersion: String = minProtoVersion,
-        @Input @Optional val swaggoVersion: String = "1.3.2"
+        @Input @Optional val swaggoVersion: String = "1.5.1"
 )
 
 @GradleSupport
@@ -47,11 +48,18 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
         runBlocking {
             delay(3000)
 
-            val errs = awaitAll(
-                    downloadProtoTools(),
-                    download3rdTools(),
-                    downloadDependentLibs()
-            )
+            val tasks: MutableList<Deferred<Any?>> = mutableListOf()
+
+            tasks.add(downloadProtoTools())
+
+            if (config.thirdpartyIgnored) {
+                logger.lifecycle("Ignoring to download 3rd tools")
+            }
+
+            tasks.add(download3rdTools(config.thirdpartyIgnored))
+            tasks.add(downloadDependentLibs())
+
+            val errs = awaitAll(*tasks.toTypedArray())
 
             errs.forEach {
                 if (it is RuntimeException) {
@@ -61,7 +69,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
         }
     }
 
-    private fun downloadProtoTools(): Deferred<Any?> = async {
+    private fun downloadProtoTools(): Deferred<Any?> = GlobalScope.async {
         return@async try {
             if (protocFile.exists()) {
                 val out = ByteArrayOutputStream()
@@ -94,24 +102,32 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                     pluginExtension.pluginConfig.protoDir,
                     ArchiverFactory.createArchiver(ArchiveFormat.ZIP)
             )
+            protocFile.setExecutable(true)
         } catch (e: Throwable) {
             e
         }
     }
 
-    private fun download3rdTools(): Deferred<Any?> = async {
+    private fun download3rdTools(nonTestLibsIgnored: Boolean = false): Deferred<Any?> = GlobalScope.async {
         return@async try {
             run {
                 // install by go get
-                val cmds = listOf(
-                        "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway",
-                        "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger",
-                        "github.com/golang/protobuf/protoc-gen-go",
-                        "google.golang.org/grpc",
+                val cmds = mutableListOf(
                         "github.com/wadey/gocovmerge",
                         "github.com/axw/gocov/gocov",
                         "github.com/AlekSi/gocov-xml"
                 )
+
+                if (!nonTestLibsIgnored) {
+                    cmds.addAll(
+                            listOf(
+                                    "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway",
+                                    "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger",
+                                    "github.com/golang/protobuf/protoc-gen-go",
+                                    "google.golang.org/grpc"
+                            )
+                    )
+                }
 
                 cmds.forEach {
                     logger.lifecycle("Starting to install $it to \$GOPATH/bin or \$GOBIN")
@@ -128,31 +144,33 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
             }
 
             run {
-                // install specific version of modules (go get can not support to install versioned module under GOPATH)
-                logger.lifecycle("Installing swaggo command (${config.swaggoVersion})")
+                if (!nonTestLibsIgnored) {
+                    // install specific version of modules (go get can not support to install versioned module under GOPATH)
+                    logger.lifecycle("Installing swaggo command (${config.swaggoVersion})")
 
-                val gopathDir = task<GoEnv>()!!.goPathDir
-                val swaggoDir = File(gopathDir, "src/github.com/swaggo".split("/").joinToString(File.separator)).apply {
-                    mkdirs()
-                }
+                    val gopathDir = task<GoEnv>()!!.goPathDir
+                    val swaggoDir = File(gopathDir, "src/github.com/swaggo".split("/").joinToString(File.separator)).apply {
+                        mkdirs()
+                    }
 
-                val cmds = listOf(
-                        "git clone -b v${config.swaggoVersion} https://github.com/swaggo/swag.git",
-                        "go get -d github.com/swaggo/swag/cmd/swag",
-                        "go install github.com/swaggo/swag/cmd/swag"
-                )
+                    val cmds = listOf(
+                            "git clone -b v${config.swaggoVersion} https://github.com/swaggo/swag.git",
+                            "go get -d github.com/swaggo/swag/cmd/swag",
+                            "go install github.com/swaggo/swag/cmd/swag"
+                    )
 
-                cmds.forEachIndexed { index, s ->
-                    exec(s) { spec ->
-                        if (index == 0) {
-                            // ignore git clone if the folder already exists
-                            spec.isIgnoreExitValue = true
+                    cmds.forEachIndexed { index, s ->
+                        exec(s) { spec ->
+                            if (index == 0) {
+                                // ignore git clone if the folder already exists
+                                spec.isIgnoreExitValue = true
+                            }
+
+                            spec.workingDir(swaggoDir)
+
+                            spec.environment.putAll(goEnvs(spec.environment))
+                            spec.environment["GO111MODULE"] = "off"
                         }
-
-                        spec.workingDir(swaggoDir)
-
-                        spec.environment.putAll(goEnvs(spec.environment))
-                        spec.environment["GO111MODULE"] = "off"
                     }
                 }
             }
@@ -161,7 +179,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
         }
     }
 
-    private fun downloadDependentLibs(): Deferred<Any?> = async {
+    private fun downloadDependentLibs(): Deferred<Any?> = GlobalScope.async {
         return@async try {
             logger.lifecycle("Generating go.mod")
 
@@ -197,7 +215,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 tidy        add missing and remove unused modules
                 vendor      make vendored copy of dependencies
                 verify      verify dependencies have expected content
-                why         explain why packages or modules are needed
+                why         explain why packagePaths or modules are needed
              */
 
             logger.lifecycle("Updating Go library dependencies in go.mod")
@@ -213,7 +231,7 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
             }
 
             ("go get -d".tokens() + config.cmdArgs + pkgs.map { it.path }).joinToString(" ").let {
-                logger.lifecycle("Updating Go package dependencie. Cmd: $it")
+                logger.lifecycle("Updating Go package dependencies. Cmd: $it")
 
                 exec(it) { spec ->
                     spec.environment.putAll(goEnvs(spec.environment))

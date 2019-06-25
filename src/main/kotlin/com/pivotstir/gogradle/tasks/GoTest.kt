@@ -55,6 +55,11 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
                 spec.standardOutput = out
+                spec.errorOutput = out
+            }
+
+            if (out.toString().contains("no package")) {
+                return
             }
 
             pkgs += out.toString().lines().filterNot {
@@ -63,9 +68,9 @@ class GoTest : AbstractGoTask<GoTestConfig>(GoTestConfig::class) {
         }
 
         ("go test -coverprofile $coverageReportFile".tokens() + config.cmdArgs + pkgs).joinToString(" ").let {
-            logger.lifecycle("Testing Go packages. Cmd: $it")
+            logger.lifecycle("Testing Go packagePaths. Cmd: $it")
 
-            // go test [build/test flags] [packages] [build/test flags & test binary flags]
+            // go test [build/test flags] [packagePaths] [build/test flags & test binary flags]
             exec(it) { spec ->
                 spec.environment.putAll(this.goEnvs(spec.environment))
                 spec.environment.putAll(config.envs)

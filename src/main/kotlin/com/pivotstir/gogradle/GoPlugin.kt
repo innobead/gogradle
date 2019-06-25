@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 
 class GoPluginConfig(
         val project: Project,
-        val dir: File = File(".${GoPlugin.NAME}"),
+        val dir: File = File(project.projectDir, ".${GoPlugin.NAME}"),
         val cacheDir: File = File(dir, "caches"),
         val envDir: File = File(dir, "env"),
         val reportDir: File = File(dir, "reports"),
