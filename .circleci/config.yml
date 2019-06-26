@@ -30,9 +30,9 @@ workflows:
               ignore:
                 - master
       - publish:
+          requires:
+            - build
           filters:
             branches:
               only: master
-          requires:
-            - build
           context: gradle-plugin
