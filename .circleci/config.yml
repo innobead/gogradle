@@ -1,4 +1,5 @@
 version: 2
+
 jobs:
   build:
     docker:
@@ -18,6 +19,7 @@ jobs:
           name: Publish
           command: |
             make publish
+
 workflows:
   version: 2
   default:
