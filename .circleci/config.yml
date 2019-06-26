@@ -24,11 +24,7 @@ workflows:
   version: 2
   default:
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore:
-                - master
+      - build
       - publish:
           requires:
             - build
