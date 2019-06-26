@@ -11,7 +11,7 @@
      steps:
        - checkout
        - run:
-           name: \"Build\"
+           name: Build
            command: |
              make build
    publish:
@@ -19,7 +19,7 @@
      steps:
        - checkout
        - run:
-           name: \"Publish\"
+           name: Publish
            command: |
              make publish
 
