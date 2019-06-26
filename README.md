@@ -1,4 +1,4 @@
-[![Travis CI](https://travis-ci.org/innobead/gogradle.svg)](https://travis-ci.org/innobead/gogradle)
+[![CircleCI](https://circleci.com/gh/innobead/gogradle.svg?style=svg)](https://circleci.com/gh/innobead/gogradle)
 
 **Note:** Before using this plugin, please note that there is no test coverage right now, but it will be done in near future.
 
