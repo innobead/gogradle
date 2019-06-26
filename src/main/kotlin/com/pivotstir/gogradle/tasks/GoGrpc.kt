@@ -72,7 +72,7 @@ class GoGrpc : AbstractGoTask<GoGrpcConfig>(GoGrpcConfig::class) {
         }
 
         if (config.referencePackages.isNotEmpty()) {
-            logger.lifecycle("Correcting referenced proto go packages used in other proto go packages by adding module path as prefix path")
+            logger.lifecycle("Correcting referenced proto go packagePaths used in other proto go packagePaths by adding module path as prefix path")
 
             val pbGoDirs = mutableListOf<File>()
 

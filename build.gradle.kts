@@ -1,15 +1,13 @@
-import org.jetbrains.kotlin.gradle.dsl.Coroutines
-
 plugins {
-    kotlin("jvm") version "1.2.70"
+    kotlin("jvm") version "1.3.40"
     `java-gradle-plugin`
     id("com.gradle.plugin-publish") version "0.10.0"
-    id("org.jetbrains.kotlin.plugin.allopen") version "1.2.70"
+    id("org.jetbrains.kotlin.plugin.allopen") version "1.3.40"
     maven
 }
 
 group = "com.pivotstir"
-version = "1.0.17"
+version = "1.1.0"
 
 repositories {
     jcenter()
@@ -22,17 +20,13 @@ dependencies {
 
     compile(kotlin("stdlib"))
     compile(kotlin("reflect"))
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.25.0")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.2")
 
     compile("org.rauschig:jarchivelib:0.8.0")
     compile("com.github.zafarkhaja:java-semver:0.9.0")
     compile("org.apache.commons:commons-lang3:3.7")
     compile("commons-io:commons-io:2.6")
     compile("com.squareup.okhttp3:okhttp:3.11.0")
-}
-
-kotlin {
-    experimental.coroutines = Coroutines.ENABLE
 }
 
 gradlePlugin {

@@ -14,7 +14,7 @@ class GoBuildConfig(
         @Input @Optional var cmdArgs: List<String> = emptyList(),
         @Input @Optional var envs: Map<String, Any> = emptyMap(), // CGO_ENABLED=0
         @Input @Optional var osArches: List<String> = emptyList(),
-        @Input @Optional var packages: List<String> = listOf("./...")
+        @Input @Optional var packagePaths: List<String> = emptyList()
 )
 
 @GradleSupport
@@ -34,6 +34,11 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
     override fun run() {
         super.run()
 
+        if (config.packagePaths.isEmpty()) {
+            logger.lifecycle("No packagePaths specified to build")
+            return
+        }
+
         val osArches = config.osArches.toMutableSet()
         if (osArches.isEmpty()) {
             osArches.add("")
@@ -42,30 +47,32 @@ class GoBuild : AbstractGoTask<GoBuildConfig>(GoBuildConfig::class) {
         for (osArch in osArches) {
             val osArchTokens = osArch.split("/")
 
-            var outputPath = listOf(
-                    pluginExtension.pluginConfig.dir.canonicalPath,
-                    pluginExtension.pluginConfig.modulePath
-            ).joinToString(File.separator)
+            for (pkg in config.packagePaths) {
+                var outputPath = listOf(
+                        pluginExtension.pluginConfig.dir.canonicalPath,
+                        pkg.split(File.separator).last()
+                ).joinToString(File.separator)
 
-            if (osArchTokens.isNotEmpty()) {
-                outputPath += osArchTokens.joinToString("-")
+                if (osArchTokens.isNotEmpty()) {
+                    outputPath += osArchTokens.joinToString("-")
 
-                if (osArchTokens[0] == "windows") {
-                    outputPath += ".exe"
+                    if (osArchTokens[0] == "windows") {
+                        outputPath += ".exe"
+                    }
                 }
-            }
 
-            ("go build -o $outputPath".tokens() + config.cmdArgs).joinToString(" ").let {
-                logger.lifecycle("Building Go packages for $osArch. Cmd: $it")
+                ("go build -o $outputPath".tokens() + config.cmdArgs + listOf(pkg)).joinToString(" ").let {
+                    logger.lifecycle("Building Go packagePaths for $osArch. Cmd: $it")
 
-                // go build [-o output] [-i] [build flags] [packages]
-                exec(it) { spec ->
-                    spec.environment.putAll(this.goEnvs(spec.environment))
-                    spec.environment.putAll(config.envs)
+                    // go build [-o output] [-i] [build flags] [packagePaths]
+                    exec(it) { spec ->
+                        spec.environment.putAll(this.goEnvs(spec.environment))
+                        spec.environment.putAll(config.envs)
 
-                    if (osArchTokens.size == 2) {
-                        spec.environment["GOOS"] = osArchTokens[0]
-                        spec.environment["GOARCH"] = osArchTokens[1]
+                        if (osArchTokens.size == 2) {
+                            spec.environment["GOOS"] = osArchTokens[0]
+                            spec.environment["GOARCH"] = osArchTokens[1]
+                        }
                     }
                 }
             }
