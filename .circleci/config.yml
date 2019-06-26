@@ -24,7 +24,6 @@ jobs:
             make publish
 
 workflows:
-  version: 2
   default:
     jobs:
       - build:
