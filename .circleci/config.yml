@@ -1,26 +1,25 @@
-version: 2.1
-executors:
-  java:
-    docker:
-      - image: circleci/openjdk:11-jdk-stretch
+version: 2
 jobs:
   build:
-    executor: java
+    docker:
+      - image: circleci/openjdk:11-jdk-stretch
     steps:
       - checkout
       - run:
-          name: "Build"
+          name: Build
           command: |
             make build
   publish:
-    executor: java
+    docker:
+      - image: circleci/openjdk:11-jdk-stretch
     steps:
       - checkout
       - run:
-          name: "Publish"
+          name: Publish
           command: |
             make publish
 workflows:
+  version: 2
   default:
     jobs:
       - build:
@@ -29,9 +28,9 @@ workflows:
               ignore:
                 - master
       - publish:
-          context: gradle-plugin
-          requires:
-            - build
           filters:
             branches:
               only: master
+          requires:
+            - build
+          context: gradle-plugin
