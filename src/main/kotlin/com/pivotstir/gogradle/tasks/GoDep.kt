@@ -230,14 +230,22 @@ class GoDep : AbstractGoTask<GoDepConfig>(GoDepConfig::class) {
                 logger.lifecycle("Starting to update ${it.path}")
             }
 
-            ("go get -d".tokens() + config.cmdArgs + pkgs.map { it.path }).joinToString(" ").let {
-                logger.lifecycle("Updating Go package dependencies. Cmd: $it")
+            pkgs.forEach { pkg ->
+                ("go get -d".tokens() + config.cmdArgs + listOf(pkg.path)).joinToString(" ").let {
+                    logger.lifecycle("Updating Go package dependencies. Cmd: $it")
 
-                exec(it) { spec ->
-                    spec.environment.putAll(goEnvs(spec.environment))
-                    spec.environment["GO111MODULE"] = "on"
-                    spec.environment.putAll(config.envs)
+                    exec(it) { spec ->
+                        spec.environment.putAll(goEnvs(spec.environment))
+                        spec.environment["GO111MODULE"] = "on"
+                        spec.environment.putAll(config.envs)
+                    }
                 }
+            }
+
+            exec("go mod tidy") { spec ->
+                spec.environment.putAll(goEnvs(spec.environment))
+                spec.environment["GO111MODULE"] = "on"
+                spec.environment.putAll(config.envs)
             }
         } catch (e: Throwable) {
             e

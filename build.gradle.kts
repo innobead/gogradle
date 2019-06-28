@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.pivotstir"
-version = "1.1.3"
+version = "1.1.5"
 
 repositories {
     jcenter()
